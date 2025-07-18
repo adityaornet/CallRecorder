@@ -22,8 +22,6 @@ import java.io.File
 class MainActivity : Activity() {
 
     private val REQUEST_PERMISSIONS = 123
-//    private lateinit var statusText: TextView
-//    private lateinit var openSettingsBtn: Button
     private lateinit var recordingsList: ListView
     private lateinit var recordingsLabel: TextView
 
@@ -31,19 +29,10 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-//        statusText = findViewById(R.id.statusText)
-//        openSettingsBtn = findViewById(R.id.openSettingsBtn)
         recordingsList = findViewById(R.id.recordingsList)
         recordingsLabel = findViewById(R.id.recordingsLabel)
-//
-//        openSettingsBtn.setOnClickListener {
-//            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-//            Toast.makeText(this, "Enable 'Call Recorder Service' in Accessibility", Toast.LENGTH_LONG).show()
-//        }
 
         requestRequiredPermissions()
-//        ignoreBatteryOptimizations()
-//        checkAndEnforceService()
 
         val manufacturer = Build.MANUFACTURER        // e.g., "Samsung"
         val model = Build.MODEL                      // e.g., "SM-G991B"
@@ -62,7 +51,6 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-//        checkAndEnforceService()
         loadRecordings()
     }
 
@@ -96,64 +84,7 @@ class MainActivity : Activity() {
         }
     }
 
-//    private fun ignoreBatteryOptimizations() {
-//        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-//        val packageName = packageName
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !pm.isIgnoringBatteryOptimizations(packageName)) {
-//            try {
-//                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-//                    data = Uri.parse("package:$packageName")
-//                }
-//                startActivity(intent)
-//                Log.d("MainActivity", "Requested battery optimization ignore")
-//            } catch (e: Exception) {
-//                val fallbackIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-//                startActivity(fallbackIntent)
-//                Log.e("MainActivity", "Battery optimization request failed: ${e.message}", e)
-//            }
-//        } else {
-//            Log.d("MainActivity", "Battery optimization already ignored or not required")
-//        }
-//    }
 
-//    private fun checkAndEnforceService() {
-//        val isEnabled = isAccessibilityServiceEnabled(this, CallAccessibilityService::class.java)
-//        if (isEnabled) {
-//            statusText.text = "Accessibility Service is ENABLED ✅"
-//            openSettingsBtn.visibility = Button.GONE
-//
-//            val accessibilityManager = getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-//            val runningServices = accessibilityManager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
-//            val isServiceRunning = runningServices.any {
-//                it.id.contains("com.brainpulse.callrecorder/.CallAccessibilityService")
-//            }
-//
-//            if (!isServiceRunning) {
-//                Log.w("MainActivity", "Service enabled but not running - possible system restriction")
-//                statusText.text = "Service enabled but not running - check device restrictions ⚠️"
-//            }
-//        } else {
-//            statusText.text = "Please enable Accessibility Service to proceed ❌"
-//            openSettingsBtn.visibility = Button.VISIBLE
-//            openSettingsBtn.performClick()
-//        }
-//    }
-
-//    private fun isAccessibilityServiceEnabled(context: Context, service: Class<*>): Boolean {
-//        val expectedComponentName = "$packageName/${service.name}"
-//        val enabledServices = Settings.Secure.getString(
-//            context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-//        ) ?: return false
-//
-//        val colonSplitter = TextUtils.SimpleStringSplitter(':')
-//        colonSplitter.setString(enabledServices)
-//        for (serviceString in colonSplitter) {
-//            if (serviceString.equals(expectedComponentName, ignoreCase = true)) {
-//                return true
-//            }
-//        }
-//        return false
-//    }
 
     private fun loadRecordings() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
