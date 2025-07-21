@@ -1,6 +1,7 @@
 package com.brainpulse.callrecorder
 
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -51,14 +52,19 @@ class ShareReceiverActivity : AppCompatActivity() {
         val resolver = contentResolver
         val displayName = getUriDetails(sourceUri)
         val timeStamp = extractTimeStamp(displayName)
-        Log.d("record timestamp",timeStamp.toString())
-        val number = getPhoneNumber(timeStamp)
-        Log.d("call timestamp",number?.second.toString())
+//        Log.d("record timestamp","record timestamp"+timeStamp.toString())
+//        val number = getPhoneNumber(timeStamp)
+//        Log.d("call timestamp","call timestamp"+number?.second.toString())
 
-        val date = Date(number?.second ?: System.currentTimeMillis())
+        val date = Date(timeStamp ?: System.currentTimeMillis())
         val format = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
         val formattedDate = format.format(date)
-        val fileName = "${number?.first}_${formattedDate.replace(":", "_").replace(" ", "_")}.mp3"
+
+        val sharedPref = getSharedPreferences("CallPrefs", Context.MODE_PRIVATE)
+        val savedNumber = sharedPref.getString("lastDialedNumber", null)
+
+
+        val fileName = "${savedNumber}_${formattedDate.replace(":", "_").replace(" ", "_")}.mp3"
         Log.d("SaveCheck", "Checking existence for file: $fileName")
 
 
@@ -170,9 +176,9 @@ class ShareReceiverActivity : AppCompatActivity() {
                 }
 
                 brand.contains("samsung") && (osVersion > 10) -> {
-    //                samsung galaxy s24 fan edition
-    //                Display Name: Call recording Aditya Nikam_250715_145458.m4a
-    //                Display Name: Call recording 7021169037_250717_175621.m4a
+                    //                samsung galaxy s24 fan edition
+                    //                Display Name: Call recording Aditya Nikam_250715_145458.m4a
+                    //                Display Name: Call recording 7021169037_250717_175621.m4a
                     val parts = displayName?.split('_')
                     val datePart = parts?.getOrNull(1) // "250717"
                     val timePart = parts?.getOrNull(2)?.substringBefore(".") // "175621"
@@ -193,7 +199,7 @@ class ShareReceiverActivity : AppCompatActivity() {
             }
         }
         return null
-}
+    }
 
 
 
@@ -227,45 +233,45 @@ class ShareReceiverActivity : AppCompatActivity() {
         return ""
     }
 
-    private fun getPhoneNumber(timeStamp: Long?): Pair<String, Long>? {
-        if (timeStamp == null) return null
-
-        val recordingTimestamp = timeStamp
-        val timeWindowMs = 30000L  // 3 seconds margin
-
-        val cursor = contentResolver.query(
-            CallLog.Calls.CONTENT_URI,
-            null,
-            null,
-            null,
-            "${CallLog.Calls.DATE} Desc"
-        )
-
-        cursor?.use {
-            while (it.moveToNext()) {
-                val number = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.NUMBER)).filter { it.isDigit() }.takeLast(10)
-                val callDate = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DATE))
-                val duration = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DURATION))
-                val type = it.getInt(it.getColumnIndexOrThrow(CallLog.Calls.TYPE))
-                Log.d("number",number)
-
-                val startTime = callDate
-                val endTime = callDate + duration * 1000
-
-                if (recordingTimestamp in (startTime - timeWindowMs)..(startTime + timeWindowMs)) {
-                    val date = Date(startTime)
-                    val format = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
-                    val formattedDate = format.format(date)
-
-                    Log.e("CallMatch", "$number : $formattedDate")
-
-                    return Pair(number, callDate)
-                }
-            }
-        }
-
-        return null
-    }
+//    private fun getPhoneNumber(timeStamp: Long?): Pair<String, Long>? {
+//        if (timeStamp == null) return null
+//
+//        val recordingTimestamp = timeStamp
+//        val timeWindowMs = 30000L  // 3 seconds margin
+//
+//        val cursor = contentResolver.query(
+//            CallLog.Calls.CONTENT_URI,
+//            null,
+//            null,
+//            null,
+//            "${CallLog.Calls.DATE} Desc"
+//        )
+//
+//        cursor?.use {
+//            while (it.moveToNext()) {
+//                val number = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.NUMBER)).filter { it.isDigit() }.takeLast(10)
+//                val callDate = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DATE))
+//                val duration = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DURATION))
+//                val type = it.getInt(it.getColumnIndexOrThrow(CallLog.Calls.TYPE))
+//                Log.d("number",number)
+//
+//                val startTime = callDate
+//                val endTime = callDate + duration * 1000
+//
+//                if (recordingTimestamp in (startTime - timeWindowMs)..(startTime + timeWindowMs)) {
+//                    val date = Date(startTime)
+//                    val format = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
+//                    val formattedDate = format.format(date)
+//
+//                    Log.e("CallMatch", "$number : $formattedDate")
+//
+//                    return Pair(number, callDate)
+//                }
+//            }
+//        }
+//
+//        return null
+//    }
 
 
 

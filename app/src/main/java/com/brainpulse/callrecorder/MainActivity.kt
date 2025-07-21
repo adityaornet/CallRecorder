@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.*
+import android.provider.CallLog
 import android.provider.MediaStore
 import android.provider.Settings
 import android.text.TextUtils
@@ -24,6 +25,9 @@ class MainActivity : Activity() {
     private val REQUEST_PERMISSIONS = 123
     private lateinit var recordingsList: ListView
     private lateinit var recordingsLabel: TextView
+    private lateinit var phoneEditText: EditText
+    private lateinit var callButton: Button
+    private lateinit var saveButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,8 +35,34 @@ class MainActivity : Activity() {
 
         recordingsList = findViewById(R.id.recordingsList)
         recordingsLabel = findViewById(R.id.recordingsLabel)
+        phoneEditText = findViewById(R.id.number)
+        callButton = findViewById(R.id.call_btn)
+        saveButton = findViewById(R.id.save_btn)
+
 
         requestRequiredPermissions()
+
+        callButton.setOnClickListener {
+            val phoneNumber = phoneEditText.text.toString()
+
+            if (phoneNumber.isNotEmpty()) {
+
+                val sharedPref = getSharedPreferences("CallPrefs", Context.MODE_PRIVATE)
+                sharedPref.edit().putString("lastDialedNumber", phoneNumber).apply()
+
+                val intent = Intent(Intent.ACTION_CALL)
+                intent.data = Uri.parse("tel:$phoneNumber")
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "Enter a valid phone number", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        saveButton.setOnClickListener {
+            val dialIntent = Intent(Intent.ACTION_DIAL)
+            startActivity(dialIntent)
+
+        }
 
         val manufacturer = Build.MANUFACTURER        // e.g., "Samsung"
         val model = Build.MODEL                      // e.g., "SM-G991B"
@@ -58,6 +88,7 @@ class MainActivity : Activity() {
         val permissionsToRequest = mutableListOf(
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.READ_CONTACTS,
+            Manifest.permission.CALL_PHONE,
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
