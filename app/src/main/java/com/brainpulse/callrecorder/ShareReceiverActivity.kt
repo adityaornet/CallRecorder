@@ -3,6 +3,7 @@ package com.brainpulse.callrecorder
 import android.content.ContentValues
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.CallLog
 import android.provider.MediaStore
@@ -36,6 +37,11 @@ class ShareReceiverActivity : AppCompatActivity() {
                 saveAudioToCallRecordings(audioUri)
                 Toast.makeText(this, "Received audio: $audioUri", Toast.LENGTH_SHORT).show()
                 Log.e("abdfvf", "onCreate: "+audioUri )
+
+                val mainIntent = Intent(this, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(mainIntent)
             }
         }
         finish()
@@ -45,7 +51,9 @@ class ShareReceiverActivity : AppCompatActivity() {
         val resolver = contentResolver
         val displayName = getUriDetails(sourceUri)
         val timeStamp = extractTimeStamp(displayName)
+        Log.d("record timestamp",timeStamp.toString())
         val number = getPhoneNumber(timeStamp)
+        Log.d("call timestamp",number?.second.toString())
 
         val date = Date(number?.second ?: System.currentTimeMillis())
         val format = SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.getDefault())
@@ -101,7 +109,7 @@ class ShareReceiverActivity : AppCompatActivity() {
         }
     }
 
-    fun extractTimeStamp(displayName: String?): Long? {
+    fun extractTimeStamp1(displayName: String?): Long? {
         if (displayName == null) return null
 
         return when {
@@ -126,6 +134,67 @@ class ShareReceiverActivity : AppCompatActivity() {
             else -> null
         }
     }
+
+
+    fun extractTimeStamp(displayName: String?): Long? {
+        val brand = Build.BRAND.lowercase()
+        val osVersion = Build.VERSION.RELEASE.toIntOrNull()
+
+        if (osVersion != null) {
+            return when {
+                (brand.contains("oppo") || brand.contains("motorola")) && (osVersion > 10)-> {
+                    // Example: record-1752667212488.wav
+                    displayName
+                        ?.substringAfter("record-")
+                        ?.substringBefore(".")
+                        ?.toLongOrNull()
+                }
+
+                brand.contains("redmi") && (osVersion > 10) -> {
+                    // Example: Amar Yadav ORNET(7977287040)_20250709140625.mp3
+                    val dateString = displayName
+                        ?.split('_')
+                        ?.lastOrNull()
+                        ?.substringBefore(".")
+
+                    dateString?.let {
+                        try {
+                            val format = SimpleDateFormat("yyyyMMddHHmmss", Locale.US)
+                            val date = format.parse(it)
+                            date?.time
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            null
+                        }
+                    }
+                }
+
+                brand.contains("samsung") && (osVersion > 10) -> {
+    //                samsung galaxy s24 fan edition
+    //                Display Name: Call recording Aditya Nikam_250715_145458.m4a
+    //                Display Name: Call recording 7021169037_250717_175621.m4a
+                    val parts = displayName?.split('_')
+                    val datePart = parts?.getOrNull(1) // "250717"
+                    val timePart = parts?.getOrNull(2)?.substringBefore(".") // "175621"
+                    val fullDateTime = datePart + timePart // "250717175621"
+
+                    fullDateTime?.let {
+                        try {
+                            val format = SimpleDateFormat("yyMMddHHmmss", Locale.US)
+                            val date = format.parse(it)
+                            date?.time
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            null
+                        }
+                    }
+                }
+                else -> null
+            }
+        }
+        return null
+}
+
 
 
     private fun getUriDetails(uri: Uri): String? {
@@ -162,14 +231,14 @@ class ShareReceiverActivity : AppCompatActivity() {
         if (timeStamp == null) return null
 
         val recordingTimestamp = timeStamp
-        val timeWindowMs = 3000L  // 3 seconds margin
+        val timeWindowMs = 30000L  // 3 seconds margin
 
         val cursor = contentResolver.query(
             CallLog.Calls.CONTENT_URI,
             null,
             null,
             null,
-            "${CallLog.Calls.DATE} DESC"
+            "${CallLog.Calls.DATE} Desc"
         )
 
         cursor?.use {
@@ -178,6 +247,7 @@ class ShareReceiverActivity : AppCompatActivity() {
                 val callDate = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DATE))
                 val duration = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DURATION))
                 val type = it.getInt(it.getColumnIndexOrThrow(CallLog.Calls.TYPE))
+                Log.d("number",number)
 
                 val startTime = callDate
                 val endTime = callDate + duration * 1000
